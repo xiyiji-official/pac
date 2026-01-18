@@ -1,0 +1,29 @@
+name: build
+
+on:
+  push:
+    branches:
+      - master
+  schedule:
+    - cron: "0 12 * * 6"  # 8 PM CST every Saturday
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v3
+    - run: |
+        python3 build.py
+        gzip -9 dist/*.txt
+    - name: Generate release info
+      id: release-info
+      run: python3 release-info.py
+    - uses: softprops/action-gh-release@v1
+      with:
+        name: ${{ steps.release-info.outputs.release_name }}
+        tag_name: ${{ steps.release-info.outputs.tag_name }}
+        body_path: ${{ steps.release-info.outputs.body_path }}
+        files: 'dist/*'
